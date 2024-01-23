@@ -4,6 +4,7 @@ import BaseTheme, { BaseTooltip } from './base';
 import LinkBlot from '../formats/link';
 import { Range } from '../core/selection';
 import icons from '../ui/icons';
+import { FormulaBlot } from '../modules/formula';
 
 
 const TOOLBAR_CONFIG = [
@@ -86,6 +87,7 @@ class SnowTooltip extends BaseTooltip {
     });
     this.quill.on(Emitter.events.SELECTION_CHANGE, (range, oldRange, source) => {
       if (range == null) return;
+      const inputPreview = this.root.querySelector('a.ql-preview');
       if (range.length === 0 && source === Emitter.sources.USER) {
         let [link, offset] = this.quill.scroll.descendant(LinkBlot, range.index);
         if (link != null) {
@@ -97,7 +99,18 @@ class SnowTooltip extends BaseTooltip {
           this.position(this.quill.getBounds(this.linkRange));
           return;
         }
+        let [formula, formulaOffset] = this.quill.scroll.descendant(FormulaBlot, range.index);
+        if (formula != null) {
+          this.linkRange = new Range(range.index - formulaOffset, formula.length());
+          const formulaPreview = FormulaBlot.value(formula.domNode);
+          inputPreview.value = formulaPreview;
+          this.show();
+          this.edit('formula', formulaPreview, { create: false });
+          this.position(this.quill.getBounds(this.linkRange));
+          return;
+        }
       } else {
+        inputPreview.value = '';
         delete this.linkRange;
       }
       this.hide();
